@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const List = require("./models/list");
+const path = require("path");
 
 const app = express();
 
@@ -28,18 +29,26 @@ app.get("/", (req, res) => {
   res.send("Welcome to home page");
 });
 
-app.get("/testListing", async (req, res) => {
-  let sampleList = new List({
-    title: "My new bedroom",
-    description: "New hostel living bedroom",
-    price: 1000,
-    location: "Peshawar",
-    country: "Pakistan",
-  });
-  await sampleList.save();
-  console.log("Sample was saved");
-  res.send("Testing Successful");
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.get("/listings", async (req, res) => {
+  const allListings = await List.find({});
+  res.render("index.ejs", { allListings });
 });
+
+// app.get("/testListing", async (req, res) => {
+//   let sampleList = new List({
+//     title: "My new bedroom",
+//     description: "New hostel living bedroom",
+//     price: 1000,
+//     location: "Peshawar",
+//     country: "Pakistan",
+//   });
+//   await sampleList.save();
+//   console.log("Sample was saved");
+//   res.send("Testing Successful");
+// });
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
