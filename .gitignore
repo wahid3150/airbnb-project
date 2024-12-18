@@ -1,0 +1,53 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for compiled binary dependencies
+node_modules/
+
+# Debugging files
+*.swp
+*.swo
+.vscode/
+
+# Dependency directories
+jspm_packages/
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.*.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Test Coverage reports
+coverage/
+
+# NPM Cache
+.npm/
