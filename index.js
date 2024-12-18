@@ -31,10 +31,18 @@ app.get("/", (req, res) => {
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/listings", async (req, res) => {
   const allListings = await List.find({});
   res.render("index.ejs", { allListings });
+});
+
+//Show Routes
+app.get("/listings/:id", async (req, res) => {
+  let { id } = req.params;
+  const listing = await List.findById(id);
+  res.render("show.ejs", { listing });
 });
 
 // app.get("/testListing", async (req, res) => {
