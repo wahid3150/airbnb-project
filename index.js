@@ -32,10 +32,16 @@ app.get("/", (req, res) => {
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.get("/listings", async (req, res) => {
   const allListings = await List.find({});
   res.render("index.ejs", { allListings });
+});
+
+//New Routes
+app.get("/listings/new", (req, res) => {
+  res.render("new.ejs");
 });
 
 //Show Routes
@@ -44,6 +50,32 @@ app.get("/listings/:id", async (req, res) => {
   const listing = await List.findById(id);
   res.render("show.ejs", { listing });
 });
+
+//Create Routes
+app.post("/listings", async (req, res) => {
+  const newListing = new List(req.body.listing);
+  await newListing.save();
+  res.redirect("/listings");
+});
+
+//===>>> 2nd Method to Create routes
+// app.post("/listings", async (req, res) => {
+//   // Destructure properties from req.body
+//   let { title, description, image, price, country, location } = req.body;
+
+// Create a new List instance using destructured variables
+//   const newListing = new List({
+//     title,
+//     description,
+//     image,
+//     price,
+//     country,
+//     location,
+//   });
+
+//   await newListing.save(); // Save to database
+//   res.redirect("/listings"); // Redirect to listings page
+// });
 
 // app.get("/testListing", async (req, res) => {
 //   let sampleList = new List({
