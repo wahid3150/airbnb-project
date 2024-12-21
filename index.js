@@ -5,9 +5,10 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const List = require("./models/list");
 const path = require("path");
+const methodOverride = require("method-override");
 
 const app = express();
-
+app.use(methodOverride("_method"));
 app.use(morgan("dev"));
 dotenv.config();
 
@@ -76,6 +77,14 @@ app.post("/listings", async (req, res) => {
 //   await newListing.save(); // Save to database
 //   res.redirect("/listings"); // Redirect to listings page
 // });
+
+//Delete Routes
+app.delete("/listings/:id", async (req, res) => {
+  let { id } = req.params;
+  const deletedListing = await List.findByIdAndDelete(id);
+  console.log(deletedListing);
+  res.redirect("/listings");
+});
 
 // app.get("/testListing", async (req, res) => {
 //   let sampleList = new List({
