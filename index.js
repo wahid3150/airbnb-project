@@ -6,11 +6,18 @@ const dotenv = require("dotenv");
 const List = require("./models/list");
 const path = require("path");
 const methodOverride = require("method-override");
+const ejsMate = require("ejs-mate");
 
 const app = express();
+app.engine("ejs", ejsMate);
 app.use(methodOverride("_method"));
 app.use(morgan("dev"));
 dotenv.config();
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+app.use(express.static(path.join(__dirname, "/public")));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 const uri = process.env.MONGO_URI;
 
@@ -30,26 +37,21 @@ app.get("/", (req, res) => {
   res.send("Welcome to home page");
 });
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
 app.get("/listings", async (req, res) => {
   const allListings = await List.find({});
-  res.render("index.ejs", { allListings });
+  res.render("listings/index.ejs", { allListings });
 });
 
 //New Routes
 app.get("/listings/new", (req, res) => {
-  res.render("new.ejs");
+  res.render("listings/new.ejs");
 });
 
 //Show Routes
 app.get("/listings/:id", async (req, res) => {
   let { id } = req.params;
   const listing = await List.findById(id);
-  res.render("show.ejs", { listing });
+  res.render("listings/show.ejs", { listing });
 });
 
 //Create Routes
