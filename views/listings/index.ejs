@@ -18,7 +18,8 @@
           <h5 class="card-title">
             <b><%= list.title %></b>
             <br />
-            &#8360; <%= list.price.toLocaleString("en-PK") %> / night
+            &#8360; <%= list.price ? list.price.toLocaleString("en-PK") : "N/A"
+            %> / night
           </h5>
           <p class="card-text"><%= list.description %></p>
         </div>
