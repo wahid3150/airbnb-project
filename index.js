@@ -69,10 +69,14 @@ app.put("/listings/:id", async (req, res) => {
 });
 
 //Create Routes
-app.post("/listings", async (req, res) => {
-  const newListing = new List(req.body.listing);
-  await newListing.save();
-  res.redirect("/listings");
+app.post("/listings", async (req, res, next) => {
+  try {
+    const newListing = new List(req.body.listing);
+    await newListing.save();
+    res.redirect("/listings");
+  } catch (error) {
+    next(error);
+  }
 });
 
 //===>>> 2nd Method to Create routes
@@ -114,6 +118,10 @@ app.delete("/listings/:id", async (req, res) => {
 //   console.log("Sample was saved");
 //   res.send("Testing Successful");
 // });
+
+app.use((err, req, res, next) => {
+  res.send("Something went wrong!");
+});
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
