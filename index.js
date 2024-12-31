@@ -7,6 +7,9 @@ const List = require("./models/list");
 const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
+const wrapAsync = require("./utils/wrapAsync");
+const ExpressError = require("./utils/ExpressError");
+const listingSchema = require("./validation/schemaValidation");
 
 const app = express();
 app.engine("ejs", ejsMate);
@@ -37,10 +40,23 @@ app.get("/", (req, res) => {
   res.send("Welcome to home page");
 });
 
-app.get("/listings", async (req, res) => {
-  const allListings = await List.find({});
-  res.render("listings/index.ejs", { allListings });
-});
+const validateListing = (req, res, next) => {
+  let { error } = listingSchema.validate(req.body);
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(400, errMsg);
+  } else {
+    next();
+  }
+};
+
+app.get(
+  "/listings",
+  wrapAsync(async (req, res) => {
+    const allListings = await List.find({});
+    res.render("listings/index.ejs", { allListings });
+  })
+);
 
 //New Routes
 app.get("/listings/new", (req, res) => {
@@ -48,36 +64,48 @@ app.get("/listings/new", (req, res) => {
 });
 
 //Show Routes
-app.get("/listings/:id", async (req, res) => {
-  let { id } = req.params;
-  const listing = await List.findById(id);
-  res.render("listings/show.ejs", { listing });
-});
+app.get(
+  "/listings/:id",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    const listing = await List.findById(id);
+    res.render("listings/show.ejs", { listing });
+  })
+);
 
 //Edit Route
-app.get("/listings/:id/edit", async (req, res) => {
-  let { id } = req.params;
-  const editListing = await List.findById(id);
-  res.render("listings/edit.ejs", { editListing });
-});
-
-//Update Route
-app.put("/listings/:id", async (req, res) => {
-  let { id } = req.params;
-  await List.findByIdAndUpdate(id, { ...req.body.listing });
-  res.redirect(`/listings/${id}`);
-});
+app.get(
+  "/listings/:id/edit",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    const editListing = await List.findById(id);
+    res.render("listings/edit.ejs", { editListing });
+  })
+);
 
 //Create Routes
-app.post("/listings", async (req, res, next) => {
-  try {
-    const newListing = new List(req.body.listing);
+app.post(
+  "/listings",
+  validateListing,
+  wrapAsync(async (req, res, next) => {
+    console.log("Received Post request:", req.body);
+    const newListing = new List(req.body);
     await newListing.save();
-    res.redirect("/listings");
-  } catch (error) {
-    next(error);
-  }
-});
+    console.log("Listing Added to database:", newListing);
+    res.status(302).redirect("/listings");
+  })
+);
+
+//Update Route
+app.put(
+  "/listings/:id",
+  validateListing,
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    await List.findByIdAndUpdate(id, { ...req.body });
+    res.redirect(`/listings/${id}`);
+  })
+);
 
 //===>>> 2nd Method to Create routes
 // app.post("/listings", async (req, res) => {
@@ -99,12 +127,15 @@ app.post("/listings", async (req, res, next) => {
 // });
 
 //Delete Routes
-app.delete("/listings/:id", async (req, res) => {
-  let { id } = req.params;
-  const deletedListing = await List.findByIdAndDelete(id);
-  console.log(deletedListing);
-  res.redirect("/listings");
-});
+app.delete(
+  "/listings/:id",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    const deletedListing = await List.findByIdAndDelete(id);
+    console.log(deletedListing);
+    res.redirect("/listings");
+  })
+);
 
 // app.get("/testListing", async (req, res) => {
 //   let sampleList = new List({
@@ -119,8 +150,15 @@ app.delete("/listings/:id", async (req, res) => {
 //   res.send("Testing Successful");
 // });
 
+//Add new route for all invalid routes request
+app.all("*", (req, res, next) => {
+  next(new ExpressError(404, "Page not found!"));
+});
+
 app.use((err, req, res, next) => {
-  res.send("Something went wrong!");
+  let { statusCode = 500, message = "Something went wrong" } = err;
+  res.status(statusCode).render("error.ejs", { message });
+  // res.status(statusCode).send(message);
 });
 
 const PORT = process.env.PORT || 8000;
