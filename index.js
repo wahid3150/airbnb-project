@@ -9,7 +9,11 @@ const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAsync");
 const ExpressError = require("./utils/ExpressError");
-const listingSchema = require("./validation/schemaValidation");
+const {
+  listingSchema,
+  reviewSchema,
+} = require("./validation/schemaValidation");
+const Review = require("./models/review");
 
 const app = express();
 app.engine("ejs", ejsMate);
@@ -50,6 +54,16 @@ const validateListing = (req, res, next) => {
   }
 };
 
+const validateReview = (req, res, next) => {
+  let { error } = reviewSchema.validate(req.body);
+  if (error) {
+    let errMsg = error.details.map((el) => el.message).join(",");
+    throw new ExpressError(404, errMsg);
+  } else {
+    next();
+  }
+};
+
 app.get(
   "/listings",
   wrapAsync(async (req, res) => {
@@ -68,7 +82,7 @@ app.get(
   "/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    const listing = await List.findById(id);
+    const listing = await List.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
   })
 );
@@ -95,18 +109,6 @@ app.post(
     res.status(302).redirect("/listings");
   })
 );
-
-//Update Route
-app.put(
-  "/listings/:id",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await List.findByIdAndUpdate(id, { ...req.body });
-    res.redirect(`/listings/${id}`);
-  })
-);
-
 //===>>> 2nd Method to Create routes
 // app.post("/listings", async (req, res) => {
 //   // Destructure properties from req.body
@@ -126,6 +128,17 @@ app.put(
 //   res.redirect("/listings"); // Redirect to listings page
 // });
 
+//Update Route
+app.put(
+  "/listings/:id",
+  validateListing,
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    await List.findByIdAndUpdate(id, { ...req.body });
+    res.redirect(`/listings/${id}`);
+  })
+);
+
 //Delete Routes
 app.delete(
   "/listings/:id",
@@ -137,18 +150,31 @@ app.delete(
   })
 );
 
-// app.get("/testListing", async (req, res) => {
-//   let sampleList = new List({
-//     title: "My new bedroom",
-//     description: "New hostel living bedroom",
-//     price: 1000,
-//     location: "Peshawar",
-//     country: "Pakistan",
-//   });
-//   await sampleList.save();
-//   console.log("Sample was saved");
-//   res.send("Testing Successful");
-// });
+//Post Review Route
+//Post request
+app.post(
+  "/listings/:id/reviews",
+  validateReview,
+  wrapAsync(async (req, res) => {
+    let list = await List.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+    list.reviews.push(newReview);
+    await newReview.save();
+    await list.save();
+    res.redirect(`/listings/${list._id}`);
+  })
+);
+
+//Delete Review Route
+app.delete(
+  "/listings/:id/reviews/:reviewId",
+  wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+    await List.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/listings/${id}`);
+  })
+);
 
 //Add new route for all invalid routes request
 app.all("*", (req, res, next) => {
@@ -165,3 +191,16 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`.bgBlue.white);
 });
+
+// app.get("/testListing", async (req, res) => {
+//   let sampleList = new List({
+//     title: "My new bedroom",
+//     description: "New hostel living bedroom",
+//     price: 1000,
+//     location: "Peshawar",
+//     country: "Pakistan",
+//   });
+//   await sampleList.save();
+//   console.log("Sample was saved");
+//   res.send("Testing Successful");
+// });
