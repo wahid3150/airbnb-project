@@ -1,0 +1,23 @@
+<!-- success.length mean the value of the length will be 0 on screen so then it
+will not be visible on the screen  -->
+<% if(success && success.length) {%>
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+  <%= success %>
+  <button
+    type="button"
+    class="btn-close"
+    data-bs-dismiss="alert"
+    area-label="Close"
+  ></button>
+</div>
+<% } %> <% if (error && error.length) { %>
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+  <%= error %>
+  <button
+    type="button"
+    class="btn-close"
+    data-bs-dismiss="alert"
+    area-label="Close"
+  ></button>
+</div>
+<% } %>
