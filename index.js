@@ -7,10 +7,15 @@ const path = require("path");
 const methodOverride = require("method-override");
 const ejsMate = require("ejs-mate");
 const ExpressError = require("./utils/ExpressError");
-const listings = require("./routes/listings");
-const reviews = require("./routes/reviews");
 const session = require("express-session");
 const flash = require("connect-flash");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const User = require("./models/user");
+
+const listingsRouter = require("./routes/listings");
+const reviewsRouter = require("./routes/reviews");
+const userRouter = require("./routes/user");
 
 const app = express();
 app.engine("ejs", ejsMate);
@@ -36,6 +41,11 @@ const sessionOptions = {
 
 app.use(session(sessionOptions));
 app.use(flash());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
@@ -61,8 +71,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to home page");
 });
 
-app.use("/listings", listings);
-app.use("/listings/:id/reviews", reviews);
+app.use("/listings", listingsRouter);
+app.use("/listings/:id/reviews", reviewsRouter);
+app.use("/", userRouter);
 
 //Add new route for all invalid routes request
 app.all("*", (req, res, next) => {
